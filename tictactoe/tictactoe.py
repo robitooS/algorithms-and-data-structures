@@ -78,7 +78,7 @@ class TicTacToe:
     def switch_player(self):
         self.current_player = "O" if self.current_player == "X" else "X"
 
-def minimax(current_player, ia_type, depth=0):
+def minimax(current_player, ia_type, depth=0, alpha=float("-inf"), beta=float("inf")):
     winner = game.check_winner()
     if winner:
         if winner == ia_type:
@@ -88,28 +88,46 @@ def minimax(current_player, ia_type, depth=0):
             
     if game.is_draw():
         return 0
-    
+        
     if current_player == ia_type:
         best_score = float("-inf")
+        for i in range(3):
+            for j in range(3):
+                if game.arr[i][j] == "":
+                    game.arr[i][j] = current_player
+                    other_player = "O" if current_player == "X" else "X"
+                    
+                    # aumentamos a profundidade
+                    score = minimax(other_player, ia_type, depth + 1, alpha, beta) 
+                    game.arr[i][j] = "" 
+                    
+                    best_score = max(best_score, score)
+                    alpha = max(alpha, score)
+                    
+                    if beta <= alpha:
+                        break
+            if beta <= alpha:
+                break
     else:
         best_score = float("inf")
-    
-    for i in range(3):
-        for j in range(3):
-            if game.arr[i][j] == "":
-                game.arr[i][j] = current_player
-                other_player = "O" if current_player == "X" else "X"
-                
-                # aumentamos a profundidade
-                score = minimax(other_player, ia_type, depth + 1) 
-                
-                game.arr[i][j] = "" 
-                
-                if current_player == ia_type:
-                    best_score = max(best_score, score)
-                else:
+        for i in range(3):
+            for j in range(3):
+                if game.arr[i][j] == "":
+                    game.arr[i][j] = current_player
+                    other_player = "O" if current_player == "X" else "X"
+                    
+                    # aumentamos a profundidade
+                    score = minimax(other_player, ia_type, depth + 1, alpha, beta)
+                    game.arr[i][j] = "" 
+                    
                     best_score = min(best_score, score)
-    
+                    beta = min(beta, score)
+                        
+                    if beta <= alpha:
+                        break
+            if beta <= alpha:
+                break
+                    
     return best_score
 
 game = TicTacToe()
@@ -138,10 +156,6 @@ while True:
     print(f"🎮 Vez de: {cor_jogador}{game.current_player}{Cores.RESET}")
 
     if game.current_player == ia_type:
-        print(f"{Cores.AMARELO}🤖 IA está analisando possibilidades...{Cores.RESET}")
-        
-        time.sleep(1.5) 
-        
         melhor_pontuacao = float("-inf")
         melhor_jogada = None
         
