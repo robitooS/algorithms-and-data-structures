@@ -7,7 +7,11 @@
 import random
 import time
 import os
+from log import GameLogger
 
+# ==========================================
+# CONFIGURAÇÕES VISUAIS
+# ==========================================
 class Cores:
     RESET = '\033[0m'
     VERMELHO = '\033[91m'
@@ -30,7 +34,7 @@ class TicTacToe:
         print("="*30)
         print(f"{Cores.RESET}\n")
 
-        print("      0   1   2")
+        print("       0   1   2")
         
         for i, linha in enumerate(self.arr):
             row_str = []
@@ -51,7 +55,7 @@ class TicTacToe:
     def append(self, row, col):
         if not (0 <= row < 3 and 0 <= col < 3):
             print(f"{Cores.VERMELHO}❌ Posição inválida! Tente novamente.{Cores.RESET}")
-            time.sleep(1) # Dá tempo de ler o erro
+            time.sleep(1) 
             return False
         if self.arr[row][col] != "":
             print(f"{Cores.VERMELHO}❌ Posição ocupada! Tente novamente.{Cores.RESET}")
@@ -62,10 +66,10 @@ class TicTacToe:
 
     def check_winner(self):
         lines = []
-        lines.extend(self.arr) # linhas
-        lines.extend([[self.arr[r][c] for r in range(3)] for c in range(3)]) # colunas
-        lines.append([self.arr[i][i] for i in range(3)]) # diagonal 1
-        lines.append([self.arr[i][2 - i] for i in range(3)]) # diagonal 2
+        lines.extend(self.arr) 
+        lines.extend([[self.arr[r][c] for r in range(3)] for c in range(3)]) 
+        lines.append([self.arr[i][i] for i in range(3)]) 
+        lines.append([self.arr[i][2 - i] for i in range(3)]) 
 
         for line in lines:
             if line[0] != "" and all(cell == line[0] for cell in line):
@@ -88,7 +92,7 @@ def minimax(current_player, ia_type, depth=0, alpha=float("-inf"), beta=float("i
             
     if game.is_draw():
         return 0
-        
+    
     if current_player == ia_type:
         best_score = float("-inf")
         for i in range(3):
@@ -97,7 +101,6 @@ def minimax(current_player, ia_type, depth=0, alpha=float("-inf"), beta=float("i
                     game.arr[i][j] = current_player
                     other_player = "O" if current_player == "X" else "X"
                     
-                    # aumentamos a profundidade
                     score = minimax(other_player, ia_type, depth + 1, alpha, beta) 
                     game.arr[i][j] = "" 
                     
@@ -116,7 +119,6 @@ def minimax(current_player, ia_type, depth=0, alpha=float("-inf"), beta=float("i
                     game.arr[i][j] = current_player
                     other_player = "O" if current_player == "X" else "X"
                     
-                    # aumentamos a profundidade
                     score = minimax(other_player, ia_type, depth + 1, alpha, beta)
                     game.arr[i][j] = "" 
                     
@@ -130,7 +132,11 @@ def minimax(current_player, ia_type, depth=0, alpha=float("-inf"), beta=float("i
                     
     return best_score
 
+# ==========================================
+# LOOP PRINCIPAL
+# ==========================================
 game = TicTacToe()
+logger = GameLogger()
 options = ["X", "O"]
 
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -147,7 +153,6 @@ time.sleep(2)
 while True:
     game.show()
     
-    # Exibe quem está jogando com cor
     if game.current_player == "X":
         cor_jogador = Cores.AZUL
     else:
@@ -162,11 +167,10 @@ while True:
         for i in range(3):
             for j in range(3):
                 if game.arr[i][j] == "":
-                    # Teste
                     game.arr[i][j] = ia_type
                     oponente = "O" if ia_type == "X" else "X"
                     score = minimax(oponente, ia_type)
-                    game.arr[i][j] = "" # Backtracking
+                    game.arr[i][j] = "" 
                     
                     if score > melhor_pontuacao:
                         melhor_pontuacao = score
@@ -174,6 +178,7 @@ while True:
         
         if melhor_jogada:
             game.append(melhor_jogada[0], melhor_jogada[1])
+            logger.move(game.arr, game.current_player, melhor_jogada) 
 
     else:
         try:
@@ -194,6 +199,8 @@ while True:
 
         if not game.append(row, col):
             continue
+            
+        logger.move(game.arr, game.current_player, (row, col))
 
     winner = game.check_winner()
     if winner:
@@ -202,11 +209,15 @@ while True:
             print(f"{Cores.VERMELHO}{Cores.NEGRITO}🤖 A IA (Minimax) VENCEU! Eu sou inevitável.{Cores.RESET}")
         else:
             print(f"{Cores.VERDE}{Cores.NEGRITO}🏆 VOCÊ VENCEU! (Isso não deveria acontecer...){Cores.RESET}")
+        
+        logger.save_game(winner)
         break
 
     if game.is_draw():
         game.show()
         print(f"{Cores.AMARELO}{Cores.NEGRITO}🤝 EMPATE! (Como esperado contra o Minimax){Cores.RESET}")
+        
+        logger.save_game(None)
         break
 
     game.switch_player()
